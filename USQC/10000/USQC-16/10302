@@ -1,0 +1,2 @@
+CustomerRefNum,ProductType,Amount,ReferenceNo,CreditDate,TxnStatus,EqErrorMessage,FileName,Remarks
+803736738549776,NEFT,1.00,,,J,Past Dated value date is not allowed. CustomerRefnum : 803736738549776,isu02012021235905.txt,

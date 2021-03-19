@@ -1,0 +1,110 @@
+DECLARE startdate_ TIMESTAMP default "2020-11-07 18:30:00";
+DECLARE enddate_ TIMESTAMP default "2020-12-29 18:30:00";
+DECLARE username STRING default "itpl";
+DECLARE api_users default true;
+DECLARE operationperformed_ ARRAY<string> DEFAULT ["CDM Card"];
+WITH childreen AS ( WITH t1 AS
+( 
+                SELECT DISTINCT user_id, 
+                                user_name, 
+                                distributer_name, 
+                                master_distributer_name, 
+                                admin_name, 
+                                api_user, 
+                                Max(created_date)                         AS max_date, 
+                                Row_number() OVER (partition BY user_id ) AS count_ 
+                FROM            `iserveuprod.staging.user_details` 
+                WHERE           ( 
+                                                user_name = username 
+                                OR              distributer_name =username 
+                                OR              master_distributer_name =username 
+                                OR              admin_name =username) 
+                GROUP BY        user_id, 
+                                user_name, 
+                                distributer_name, 
+                                master_distributer_name, 
+                                admin_name, 
+                                api_user) 
+SELECT t1.* EXCEPT (max_date, count_) FROM   t1 
+WHERE  count_=1 ), 
+wallet_topup AS ( 
+           SELECT     id, 
+                      amount AS amounttransacted, 
+                      status_desc, 
+                      operation_performed, 
+                      status, 
+                      rrn, 
+                      transaction_type, 
+                      user_id, 
+                      api_user_id, 
+                      service_provider_id, 
+                      transaction_status_code, 
+                      created_date, 
+                      origin_identifier, 
+                      updated_date, 
+                      service_provider_id, 
+                      credit_debit, 
+                      api_wallet_id, 
+                      wallet_id 
+           FROM       `iserveuprod.staging.wallet_topup_status_transactions` t_1 
+           INNER JOIN 
+                      ( 
+                               SELECT   id                AS num, 
+                                        max(updated_date) AS ud 
+                               FROM     `iserveuprod.staging.wallet_topup_status_transactions` 
+                               WHERE    operation_performed IN unnest(operationperformed_) 
+                               AND      created_date BETWEEN startdate_ AND      enddate_ 
+                               GROUP BY id ) AS t_2 
+           ON         t_1.id=t_2.num 
+           AND        t_1.updated_date =t_2.ud 
+           WHERE      operation_performed IN unnest(operationperformed_) 
+           AND        created_date BETWEEN startdate_ AND        enddate_ ), 
+last_uwt2 AS ( 
+           SELECT     id, 
+                      CASE 
+                                 WHEN api_users THEN apipreviousbalance 
+                                 ELSE previousbalance 
+                      END AS previousamount, 
+                      CASE 
+                                 WHEN api_users THEN apicurrentbalance 
+                                 ELSE currentbalance 
+                      END AS currentbalance, 
+           FROM       `iserveuprod.staging.userwallettransaction2` t_1 
+           INNER JOIN 
+                      ( 
+                               SELECT   id              AS num, 
+                                        max(updatedate) AS ud 
+                               FROM     `iserveuprod.staging.userwallettransaction2` 
+                               WHERE    transactiontype IN unnest(operationperformed_) 
+                               AND      createddate BETWEEN startdate_ AND      enddate_ 
+                               GROUP BY id ) AS t_2 
+           ON         t_1.id=t_2.num 
+           AND        t_1.updatedate =t_2.ud 
+           WHERE      transactiontype IN unnest(operationperformed_) 
+           AND        createddate BETWEEN startdate_ AND        enddate_ ),
+           uwt AS ( 
+          SELECT    
+                    t1.id,
+              
+                    t1.amounttransacted, 
+                    t1.operation_performed, 
+                    t1.transaction_type, 
+                    t1.transaction_status_code, 
+                    t1.status_desc, 
+                    unix_millis(t1.created_date) AS created_date, 
+                    unix_millis(t1.updated_date) AS updated_date, 
+                    t1.rrn, 
+                   
+                    t1.credit_debit, 
+                   
+          FROM      wallet_topup t1 
+          LEFT JOIN last_uwt2 t2 
+          ON        t1.id =t2.id 
+          LEFT JOIN childreen USER 
+          ON        t1.user_id = USER.user_id 
+          LEFT JOIN childreen api 
+          ON        t1.api_user_id = api.user_id 
+          LEFT JOIN `iserveuprod.staging.transaction_status` transaction_status 
+          ON        t1.transaction_status_code = transaction_status.code ) 
+SELECT uwt.* 
+FROM   uwt

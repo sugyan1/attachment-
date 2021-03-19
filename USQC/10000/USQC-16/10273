@@ -1,0 +1,2 @@
+CustomerRefNum,ProductType,Amount,ReferenceNo,CreditDate,TxnStatus,EqErrorMessage,FileName,Remarks
+800424240443408,NEFT,1.00,000308546313,2020-12-24,R,BENEFICIARY NAME DIFFER,isu24122020112232.txt,

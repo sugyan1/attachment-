@@ -1,0 +1,13 @@
+<html>
+<head>
+<title>OTP Access Page</title>
+</head>
+<body>
+	<form action="https://uat.billdesk.com/pgidsk/PGIDummyProcessor?reqid=BDDM001" method="post" enctype="text/xml">
+		<input type="text" name="MD" value="" placeholder="MD"><br>
+		<input type="text" name="PaReq" value="" placeholder="PaReq"><br>
+		<input type="text" name="TermUrl" value="" placeholder="TermUrl"><br>
+		<input type="submit" value="Submit"><br>
+	</form>
+</body>
+</html>

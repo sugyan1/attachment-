@@ -1,0 +1,21 @@
+BaseURL : http://34.93.52.215:8083
+ 
+For debit endpoint : /debitwallet
+For credit endpoint : /creditwallet
+ 
+Request data :
+
+{
+"walletid":"2",
+"amount":"100"
+}
+ 
+Response data :
+ 
+
+
+{
+"txnId": 602316985725059073,
+"status": 0,
+"statusDesc": "Successfully debited"
+}
